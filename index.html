@@ -1,0 +1,322 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مبادرة مدرسة العلاء بن الحضرمي المتوسطة</title>
+
+<style>
+:root{
+--primary:#0b3d91;
+--accent:#1e8e3e;
+--bg:#f4f6f9;
+--card:#ffffff;
+--text:#222;
+}
+
+body.dark{
+--bg:#111827;
+--card:#1f2937;
+--text:#f9fafb;
+}
+
+body{
+margin:0;
+font-family:Tajawal, Arial, sans-serif;
+background:var(--bg);
+color:var(--text);
+transition:0.3s;
+}
+
+header{
+background:var(--primary);
+color:white;
+padding:20px;
+text-align:center;
+position:sticky;
+top:0;
+z-index:1000;
+}
+
+header h1{margin:0;font-size:22px}
+header p{margin:5px 0 0;font-size:14px}
+
+.container{
+max-width:800px;
+margin:30px auto;
+padding:20px;
+}
+
+.card{
+background:var(--card);
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+button{
+padding:10px 18px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-size:15px;
+margin:5px 0;
+}
+
+.primary{background:var(--primary);color:white}
+.secondary{background:var(--accent);color:white}
+.option{
+display:block;
+width:100%;
+background:#e5e7eb;
+margin:8px 0;
+text-align:right;
+}
+.option.selected{background:#c7d2fe}
+
+.progress{
+height:8px;
+background:#ddd;
+border-radius:10px;
+overflow:hidden;
+margin-bottom:10px;
+}
+.progress-bar{
+height:100%;
+width:0%;
+background:var(--accent);
+transition:0.3s;
+}
+
+.hidden{display:none}
+
+.modal{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,0.6);
+display:flex;
+align-items:center;
+justify-content:center;
+}
+.modal-content{
+background:white;
+padding:25px;
+border-radius:10px;
+width:90%;
+max-width:400px;
+text-align:center;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+}
+th,td{
+padding:8px;
+border-bottom:1px solid #ccc;
+text-align:center;
+}
+.gold{background:#ffd70033}
+.silver{background:#c0c0c033}
+.bronze{background:#cd7f3233}
+
+footer{
+text-align:center;
+padding:20px;
+font-size:13px;
+color:#777;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>مبادرة مدرسة العلاء بن الحضرمي المتوسطة</h1>
+<p>منصة اختبارات الصف الثالث متوسط<br>
+إعداد المعلم: جهاد الزهراني | مدير المدرسة: إبراهيم المالكي</p>
+<button onclick="toggleDark()">🌙 تبديل الوضع</button>
+</header>
+
+<div class="container">
+
+<div id="home" class="card">
+<h2>اختر المادة - الصف الثالث متوسط</h2>
+<button class="primary" onclick="openNameModal('رياضيات')">الرياضيات</button>
+<button class="primary" onclick="openNameModal('علوم')">العلوم</button>
+<button class="primary" onclick="openNameModal('لغتي')">لغتي</button>
+<button class="secondary" onclick="renderLeaderboard()">🏆 لوحة المتصدرين</button>
+</div>
+
+<div id="quiz" class="card hidden">
+<div id="quizInfo"></div>
+<div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+<div id="timer"></div>
+<h3 id="questionText"></h3>
+<div id="options"></div>
+<button class="primary" id="nextBtn">التالي</button>
+</div>
+
+<div id="result" class="card hidden"></div>
+
+</div>
+
+<div id="nameModal" class="modal hidden">
+<div class="modal-content">
+<h3>أدخل اسمك لبدء الاختبار</h3>
+<input type="text" id="studentName" maxlength="25" placeholder="اسم الطالب">
+<p id="nameError" style="color:red"></p>
+<button class="primary" onclick="validateName()">ابدأ الاختبار</button>
+<button onclick="closeModal()">إلغاء</button>
+</div>
+</div>
+
+<footer>
+جميع الحقوق محفوظة © العلاء بن الحضرمي المتوسطة
+</footer>
+
+<script>
+const quizzes={
+"رياضيات":[
+{q:"كم ناتج 7×8؟",o:["54","56","64","48"],a:1},
+{q:"محيط مربع ضلعه 5؟",o:["10","15","20","25"],a:2}
+],
+"علوم":[
+{q:"الكوكب الأحمر؟",o:["المريخ","الأرض","زحل","عطارد"],a:0},
+{q:"حالة الماء عند 100°؟",o:["صلبة","غازية","سائلة","بلازما"],a:1}
+],
+"لغتي":[
+{q:"مرادف كلمة سريع؟",o:["بطيء","عاجل","سريع","متأخر"],a:1},
+{q:"نوع كلمة مدرسة؟",o:["فعل","اسم","حرف","ضمير"],a:1}
+]
+};
+
+let currentQuiz=[],currentIndex=0,score=0,selected=null,currentStudent="",currentSubject="";
+let timerInterval,timeLeft=60;
+
+function openNameModal(subject){
+currentSubject=subject;
+document.getElementById("nameModal").classList.remove("hidden");
+}
+
+function closeModal(){
+document.getElementById("nameModal").classList.add("hidden");
+}
+
+function validateName(){
+let name=document.getElementById("studentName").value.trim();
+if(name===""){document.getElementById("nameError").innerText="يرجى إدخال الاسم";return;}
+currentStudent=name;
+closeModal();
+startQuiz();
+}
+
+function startQuiz(){
+currentQuiz=[...quizzes[currentSubject]].sort(()=>Math.random()-0.5);
+currentIndex=0;score=0;
+document.getElementById("home").classList.add("hidden");
+document.getElementById("quiz").classList.remove("hidden");
+loadQuestion();
+}
+
+function loadQuestion(){
+selected=null;
+let q=currentQuiz[currentIndex];
+document.getElementById("quizInfo").innerText=`${currentSubject} | سؤال ${currentIndex+1} من ${currentQuiz.length}`;
+document.getElementById("questionText").innerText=q.q;
+let optionsDiv=document.getElementById("options");
+optionsDiv.innerHTML="";
+q.o.sort(()=>Math.random()-0.5).forEach((opt,i)=>{
+let btn=document.createElement("button");
+btn.className="option";
+btn.innerText=opt;
+btn.onclick=()=>selectAnswer(btn,opt,q.o[q.a]);
+optionsDiv.appendChild(btn);
+});
+updateProgress();
+startTimer();
+}
+
+function selectAnswer(btn,opt,correct){
+document.querySelectorAll(".option").forEach(b=>b.classList.remove("selected"));
+btn.classList.add("selected");
+selected=(opt===correct);
+}
+
+function nextQuestion(){
+if(selected===null){alert("اختر إجابة أولاً");return;}
+if(selected)score++;
+currentIndex++;
+if(currentIndex<currentQuiz.length)loadQuestion();
+else finishQuiz();
+}
+
+document.getElementById("nextBtn").addEventListener("click",nextQuestion);
+
+function updateProgress(){
+let percent=(currentIndex/currentQuiz.length)*100;
+document.getElementById("progressBar").style.width=percent+"%";
+}
+
+function startTimer(){
+clearInterval(timerInterval);
+timeLeft=60;
+document.getElementById("timer").innerText="الوقت: 60 ثانية";
+timerInterval=setInterval(()=>{
+timeLeft--;
+document.getElementById("timer").innerText="الوقت: "+timeLeft+" ثانية";
+if(timeLeft<=0){clearInterval(timerInterval);nextQuestion();}
+},1000);
+}
+
+function finishQuiz(){
+clearInterval(timerInterval);
+let percent=Math.round((score/currentQuiz.length)*100);
+saveResult(percent);
+document.getElementById("quiz").classList.add("hidden");
+let result=document.getElementById("result");
+result.classList.remove("hidden");
+result.innerHTML=`<h2>النتيجة</h2>
+<p>${currentStudent}</p>
+<p>الدرجة: ${score} / ${currentQuiz.length}</p>
+<p>النسبة: ${percent}%</p>
+<button class="primary" onclick="location.reload()">العودة للرئيسية</button>`;
+}
+
+function saveResult(percent){
+let data=JSON.parse(localStorage.getItem("leaderboardData"))||[];
+data.push({name:currentStudent,subject:currentSubject,percentage:percent});
+data.sort((a,b)=>b.percentage-a.percentage);
+localStorage.setItem("leaderboardData",JSON.stringify(data.slice(0,10)));
+}
+
+function renderLeaderboard(){
+let data=JSON.parse(localStorage.getItem("leaderboardData"))||[];
+let html="<h2>🏆 لوحة المتصدرين</h2>";
+if(data.length===0){html+="<p>لا توجد نتائج بعد</p>";}
+else{
+html+="<table><tr><th>#</th><th>الاسم</th><th>المادة</th><th>%</th></tr>";
+data.forEach((d,i)=>{
+let cls=i===0?"gold":i===1?"silver":i===2?"bronze":"";
+html+=`<tr class="${cls}"><td>${i+1}</td><td>${d.name}</td><td>${d.subject}</td><td>${d.percentage}</td></tr>`;
+});
+html+="</table>";
+}
+html+='<button class="primary" onclick="location.reload()">إغلاق</button>';
+document.getElementById("home").classList.add("hidden");
+let result=document.getElementById("result");
+result.classList.remove("hidden");
+result.innerHTML=html;
+}
+
+function toggleDark(){
+document.body.classList.toggle("dark");
+}
+</script>
+
+</body>
+</html>
