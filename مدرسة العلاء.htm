@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مبادرة مدرسة العلاء بن الحضرمي لاختبارات نافس الوطنية</title>
+
+<style>
+body{
+margin:0;
+font-family:Tahoma,Arial;
+background:#f4f6f9;
+}
+
+header{
+background:#1e3a8a;
+color:white;
+text-align:center;
+padding:25px 15px;
+}
+
+header h1{
+margin:5px 0;
+font-size:22px;
+}
+
+header p{
+margin:4px 0;
+font-size:14px;
+}
+
+.container{
+padding:40px;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 6px 15px rgba(0,0,0,0.08);
+text-align:center;
+}
+
+.card h2{
+margin-bottom:15px;
+}
+
+button{
+background:#1e3a8a;
+color:white;
+border:none;
+padding:10px 15px;
+border-radius:8px;
+cursor:pointer;
+}
+
+button:hover{
+opacity:0.9;
+}
+
+#quizSection,#leaderboardSection{
+display:none;
+padding:30px;
+}
+
+.question-box{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:15px;
+box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.option{
+margin:8px 0;
+}
+
+#nameModal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+display:none;
+justify-content:center;
+align-items:center;
+}
+
+.modal-content{
+background:white;
+padding:25px;
+border-radius:12px;
+width:300px;
+text-align:center;
+}
+
+input{
+padding:8px;
+width:90%;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border:1px solid #ddd;
+text-align:center;
+}
+
+th{
+background:#1e3a8a;
+color:white;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>مبادرة مدرسة العلاء بن الحضرمي لاختبارات نافس الوطنية</h1>
+<p>مدير المدرسة: إبراهيم المالكي</p>
+<p>إعداد المعلم: جهاد الزهراني</p>
+<p>منسق برنامج نافس: الأستاذ عبدالاله الثقفي</p>
+</header>
+
+<div class="container" id="homeSection">
+
+<div class="card">
+<h2>الرياضيات - الصف الثالث متوسط</h2>
+<button onclick="openNameModal('الرياضيات')">ابدأ الاختبار</button>
+</div>
+
+<div class="card">
+<h2>العلوم - الصف الثالث متوسط</h2>
+<button onclick="openNameModal('العلوم')">ابدأ الاختبار</button>
+</div>
+
+<div class="card">
+<h2>لغتي - الصف الثالث متوسط</h2>
+<button onclick="openNameModal('لغتي')">ابدأ الاختبار</button>
+</div>
+
+<div class="card">
+<h2>🏆 لوحة المتصدرين</h2>
+<button onclick="showLeaderboard()">عرض اللوحة</button>
+</div>
+
+</div>
+
+<div id="quizSection">
+<h2 id="quizTitle"></h2>
+<div class="question-box">
+<p id="questionText"></p>
+<div id="options"></div>
+<button onclick="nextQuestion()">التالي</button>
+</div>
+</div>
+
+<div id="leaderboardSection">
+<h2>لوحة المتصدرين</h2>
+<table>
+<thead>
+<tr>
+<th>الترتيب</th>
+<th>اسم الطالب</th>
+<th>المادة</th>
+<th>النسبة</th>
+</tr>
+</thead>
+<tbody id="leaderboardBody"></tbody>
+</table>
+<br>
+<button onclick="goHome()">العودة للرئيسية</button>
+</div>
+
+<div id="nameModal">
+<div class="modal-content">
+<h3>أدخل اسمك لبدء الاختبار</h3>
+<input type="text" id="studentName" placeholder="اسم الطالب">
+<br><br>
+<button onclick="startQuiz()">ابدأ</button>
+<button onclick="closeModal()">إلغاء</button>
+</div>
+</div>
+
+<script>
+
+let currentSubject="";
+let currentStudent="";
+let currentQuestionIndex=0;
+let score=0;
+
+const questions={
+"الرياضيات":[
+{q:"كم ناتج 5 × 6؟", options:["25","30","35","40"], answer:1},
+{q:"كم ناتج 9 × 8؟", options:["56","72","81","64"], answer:1}
+],
+"العلوم":[
+{q:"ما هو الكوكب الأحمر؟", options:["الأرض","المريخ","زحل","المشتري"], answer:1},
+{q:"ما وحدة قياس القوة؟", options:["متر","نيوتن","كجم","ثانية"], answer:1}
+],
+"لغتي":[
+{q:"مرادف كلمة سريع؟", options:["بطيء","عاجل","ثقيل","قصير"], answer:1},
+{q:"نوع كلمة كتاب؟", options:["فعل","حرف","اسم","ضمير"], answer:2}
+]
+};
+
+function openNameModal(subject){
+currentSubject=subject;
+document.getElementById("nameModal").style.display="flex";
+}
+
+function closeModal(){
+document.getElementById("nameModal").style.display="none";
+}
+
+function startQuiz(){
+const name=document.getElementById("studentName").value.trim();
+if(name===""){
+alert("يرجى إدخال الاسم");
+return;
+}
+currentStudent=name;
+score=0;
+currentQuestionIndex=0;
+
+document.getElementById("nameModal").style.display="none";
+document.getElementById("homeSection").style.display="none";
+document.getElementById("quizSection").style.display="block";
+document.getElementById("quizTitle").innerText="اختبار "+currentSubject+" - الصف الثالث متوسط";
+loadQuestion();
+}
+
+function loadQuestion(){
+const q=questions[currentSubject][currentQuestionIndex];
+document.getElementById("questionText").innerText=q.q;
+
+let optionsHtml="";
+q.options.forEach((opt,i)=>{
+optionsHtml+=`<div class="option">
+<input type="radio" name="option" value="${i}"> ${opt}
+</div>`;
+});
+document.getElementById("options").innerHTML=optionsHtml;
+}
+
+function nextQuestion(){
+const selected=document.querySelector('input[name="option"]:checked');
+if(!selected){
+alert("اختر إجابة أولاً");
+return;
+}
+
+if(parseInt(selected.value)===questions[currentSubject][currentQuestionIndex].answer){
+score++;
+}
+
+currentQuestionIndex++;
+
+if(currentQuestionIndex<questions[currentSubject].length){
+loadQuestion();
+}else{
+finishQuiz();
+}
+}
+
+function finishQuiz(){
+const percentage=Math.round((score/questions[currentSubject].length)*100);
+saveResult(percentage);
+alert("انتهى الاختبار\nدرجتك: "+score+"\nالنسبة: "+percentage+"%");
+goHome();
+}
+
+function saveResult(percentage){
+let data=JSON.parse(localStorage.getItem("leaderboardData"))||[];
+data.push({name:currentStudent,subject:currentSubject,percentage:percentage});
+data.sort((a,b)=>b.percentage-a.percentage);
+data=data.slice(0,10);
+localStorage.setItem("leaderboardData",JSON.stringify(data));
+}
+
+function showLeaderboard(){
+document.getElementById("homeSection").style.display="none";
+document.getElementById("leaderboardSection").style.display="block";
+renderLeaderboard();
+}
+
+function renderLeaderboard(){
+let data=JSON.parse(localStorage.getItem("leaderboardData"))||[];
+let body="";
+data.forEach((item,index)=>{
+body+=`<tr>
+<td>${index+1}</td>
+<td>${item.name}</td>
+<td>${item.subject}</td>
+<td>${item.percentage}%</td>
+</tr>`;
+});
+document.getElementById("leaderboardBody").innerHTML=body||"<tr><td colspan='4'>لا توجد نتائج بعد</td></tr>";
+}
+
+function goHome(){
+document.getElementById("quizSection").style.display="none";
+document.getElementById("leaderboardSection").style.display="none";
+document.getElementById("homeSection").style.display="grid";
+}
+
+</script>
+
+</body>
+</html>
